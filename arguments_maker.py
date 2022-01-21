@@ -2,7 +2,7 @@ class argument_maker:
     def __init__(self):
         self.args = []
 
-    def add_param(self, param_name, value=None):
+    def add_arg(self, param_name, value=None):
         self.args.append(str(param_name))
         if value:
             self.args.append(str(value))
