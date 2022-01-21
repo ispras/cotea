@@ -1,4 +1,4 @@
-from ansirate.wrappers.wrapper_base import wrapper_base
+from cotea.wrappers.wrapper_base import wrapper_base
 
 
 # wraps from ansible.cli.playbook.PlaybookCLI.run()

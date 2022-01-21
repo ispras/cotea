@@ -1,4 +1,4 @@
-from ansirate.wrappers.wrapper_base import wrapper_base
+from cotea.wrappers.wrapper_base import wrapper_base
 
 
 # wraps ansible.executor.playbook_executor.PlaybookExecutor._get_serialized_batches()
@@ -23,5 +23,8 @@ class get_batches_wrapper(wrapper_base):
 
         self.logger.debug("empty play: %s", self.empty_play)
         self.sync_obj.continue_runner_with_stop()
+
+        self.logger.info(res_batches)
+        self.logger.info(play.serial)
 
         return res_batches

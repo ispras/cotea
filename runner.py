@@ -14,16 +14,16 @@ from ansible.plugins.strategy import StrategyBase
 from ansible.plugins.strategy.linear import StrategyModule
 from ansible.executor.task_queue_manager import TaskQueueManager
 
-from ansirate.ansible_execution_sync import ans_sync
-from ansirate.arguments_maker import argument_maker
-from ansirate.wrappers.get_batches_wrapper import get_batches_wrapper
-from ansirate.wrappers.strategy_run_wrapper import strategy_run_wrapper
-from ansirate.wrappers.get_next_task_wrapper import get_next_task_wrapper
-from ansirate.wrappers.wait_pending_wrapper import wait_pending_wrapper
-from ansirate.wrappers.tqm_run_wrapper import tqm_run_wrapper
-from ansirate.wrappers.get_batch_len_wrapper import get_batch_len_wrapper
-from ansirate.wrappers.pbcli_run_wrapper import pbcli_run_wrapper
-from ansirate.wrappers.play_prereqs_wrapper import play_prereqs_wrapper
+from cotea.ansible_execution_sync import ans_sync
+from cotea.arguments_maker import argument_maker
+from cotea.wrappers.get_batches_wrapper import get_batches_wrapper
+from cotea.wrappers.strategy_run_wrapper import strategy_run_wrapper
+from cotea.wrappers.get_next_task_wrapper import get_next_task_wrapper
+from cotea.wrappers.wait_pending_wrapper import wait_pending_wrapper
+from cotea.wrappers.tqm_run_wrapper import tqm_run_wrapper
+from cotea.wrappers.get_batch_len_wrapper import get_batch_len_wrapper
+from cotea.wrappers.pbcli_run_wrapper import pbcli_run_wrapper
+from cotea.wrappers.play_prereqs_wrapper import play_prereqs_wrapper
 
 
 class runner:
