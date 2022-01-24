@@ -1,4 +1,4 @@
-from cotea.wrappers.wrapper_base import wrapper_base
+from cotea.src.wrappers.wrapper_base import wrapper_base
 
 
 # wraps from ansible.cli.CLI._play_prereqs()
