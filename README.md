@@ -5,7 +5,7 @@ Tool that provides Python API to run Ansible programmatically.
 
 ### cotea allows:
 - **To control** Ansible execution by iterating over the Ansible plays and tasks
-- **To embed** Ansible into other systems
+- **To embed** Ansible into another system
 - **To debug** Ansible execution by getting the values of Ansible variables and by retrieving the results of the execution of Ansible tasks/plays
 
 ## Installation
