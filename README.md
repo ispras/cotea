@@ -1,5 +1,7 @@
 # cotea
 
+#### (COntrol Thread Execution Ansible)
+
 ### cotea is:
 Tool that provides Python API to run Ansible programmatically.
 
