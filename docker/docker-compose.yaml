@@ -1,0 +1,8 @@
+version: "3.7"
+
+services:
+  ansiblehost:
+    image: ansible-host-image
+
+  gocotea:
+    image: cotea-image

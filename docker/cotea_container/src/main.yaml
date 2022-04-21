@@ -1,0 +1,25 @@
+---
+- name: Play1
+  hosts: all
+  tasks:
+  - name: Pinge Ponge
+    ping:
+  
+  - name: Creates directory
+    file:
+      path: /home/ubuntu/tmp_dir
+      state: directory
+  
+  - name: Creating an empty file
+    file:
+      path: /home/ubuntu/tmp_dir/tmp_file
+      state: touch
+  
+  - name: delete file
+    shell: "rm /home/ubuntu/tmp_dir/tmp_file"
+  
+  - name: Delete content & directory
+    file:
+      state: absent
+      path: /home/ubuntu/tmp_dir/
+
