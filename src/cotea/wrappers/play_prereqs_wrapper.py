@@ -1,4 +1,4 @@
-from cotea.src.wrappers.wrapper_base import wrapper_base
+from cotea.wrappers.wrapper_base import wrapper_base
 
 
 # wraps from ansible.cli.CLI._play_prereqs()
@@ -12,15 +12,10 @@ class play_prereqs_wrapper(wrapper_base):
 
     def __call__(self, real_obj):
         loader, inventory, variable_manager = self.func()
-        self.logger.debug("_pre_reqs call")
+        self.logger.debug("_play_prereqs() call")
 
-        if not self.loader:
-            self.loader = loader
-
-        if not self.inventory:
-            self.inventory = inventory
-
-        if not self.variable_manager:
-            self.variable_manager = variable_manager
+        self.loader = loader
+        self.inventory = inventory
+        self.variable_manager = variable_manager
 
         return loader, inventory, variable_manager
