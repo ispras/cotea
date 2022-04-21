@@ -15,6 +15,8 @@ Tool that provides Python API to run Ansible programmatically.
 pip install -i https://test.pypi.org/simple/ cotea==1.3
 ```
 
+Tested on Ansible 2.9.4, 2.12.2, 2.12.4 in ubuntu 20.04.
+
 ## Quick start
 ```python
 from cotea.runner import runner
