@@ -11,20 +11,14 @@ Tool that provides Python API to run Ansible programmatically.
 - **To debug** Ansible execution by getting the values of Ansible variables and by retrieving the results of the execution of Ansible tasks/plays
 
 ## Installation
-At the moment, only installation from source is possible. In the future, it is planned to install cotea using pip. 
-It is assumed that Ansible is installed in the current environment.
-
-You need just to clone this project:
 ```bash
-git clone https://github.com/ispras/cotea
+pip install -i https://test.pypi.org/simple/ cotea==1.3
 ```
-and use **from cotea.src.** to import any of cotea objects being in the same directory as the cotea folder. 
 
 ## Quick start
 ```python
-from cotea.src.runner import runner
-from cotea.src.arguments_maker import argument_maker
-
+from cotea.runner import runner
+from cotea.arguments_maker import argument_maker
 
 inv_path = "/path/to/inventory"
 playbook_path = "/path/to/playbook"
@@ -35,16 +29,14 @@ am.add_arg("-i", inv_path)
 r = runner(playbook_path, am)
 
 while r.has_next_play():
-    setup_ok = r.setup_play_for_run()
     current_play = r.get_cur_play_name()
     print("PLAY:", current_play)
 
-    if setup_ok:
-        while r.has_next_task():
-            next_task = r.get_next_task_name()
-            print("\tTASK:", next_task)
+    while r.has_next_task():
+        next_task = r.get_next_task_name()
+        print("\tTASK:", next_task)
             
-            r.run_next_task()
+        r.run_next_task()
 
 r.finish_ansible()
 ```
@@ -61,17 +53,15 @@ specific_task = "s_task"
 s_var_name = "s_var"
 
 while r.has_next_play():
-    setup_ok = r.setup_play_for_run()
     current_play = r.get_cur_play_name()
 
-    if setup_ok:
-        while r.has_next_task():
-            next_task = r.get_next_task_name()
-            if current_play == specific_play and next_task == specific_task:
-                # getting variable at specific execution point
-                s_var_value = r.get_variable(s_var_name)
+    while r.has_next_task():
+        next_task = r.get_next_task_name()
+        if current_play == specific_play and next_task == specific_task:
+            # getting variable at specific execution point
+            s_var_value = r.get_variable(s_var_name)
 
-            r.run_next_task()
+        r.run_next_task()
 
 r.finish_ansible()
 

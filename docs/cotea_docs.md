@@ -35,45 +35,38 @@ After all of the needed actions, *argument_maker* object should be passed to run
 
 ## runner
 
-**\_\_init\_\_(pb_path, arg_maker=None, debug_lvl=None, log_f=None)**
+**\_\_init\_\_(pb_path, arg_maker=None, debug_lvl=None)**
 - *pb_path* - path of the playbook .yaml file
 - *arg_maker* - object of *argument_maker* class
 - *debug_lvl* - currently this option is not for user purposes. It is planned that in future this option will this option will give usefull information for *cotea* user
-- *log_f* - path to file to which all the *cotea* output will be redirected. cotea output means the standard Ansible output with the *cotea* additional messages. This option can be useful when one embeds Ansible into another system. The system's output will not contain Ansible output in this case.
 
 ### controlling interfaces
 
 **has_next_play(): bool**
 Checks if there is unexecuted *plays* in current Ansible execution. Returns *true* if there is.
 
-**setup_play_for_run(): bool**
-Starts a bunch of actions that are needed to setup play for run. Returns, when play is ready to run (returns *true*). If there was an error and *play* is not ready to start, returns *false*.
-
 **has_next_task(): bool**
 Checks if there is unexecuted *tasks* in currently executing *play*. Returns *true* if there is.
 
 **run_next_task()**
-Runs the next *task* in the currently executing *play*. 
+Runs the next task and returns its results (a list of TaskResult class objects) on every host in current group. 
 
 **finish_ansible()**
 Starts a bunch of actions that are needed to finish the current Ansible execution. This method has to be called only when there are no unexecuted *plays* and *tasks* (has_next_play and has_next_task return *false*).
 
-These five interfaces are the main part of *cotea*. They let one control the execution of *ansible-playbook* launch. Every usage of cotea will contain them in the following order:
+These four interfaces are the main part of *cotea*. They let one control the execution of *ansible-playbook* launch. Every usage of cotea will contain them in the following order:
 ```python
 # r = runner(...)
 
 while r.has_next_play():
-    setup_ok = r.setup_play_for_run()
-    
-	if setup_ok:
-		while r.has_next_task():
-			r.run_next_task()
+	while r.has_next_task():
+		r.run_next_task()
 
 r.finish_ansible()
 ```
 
-**skip_next_task()**
-Skips the next tasks of currently executing play.
+**schedule_last_task_again()**
+Queues the last running task for re-execution
 
 ### debugging interfaces
 **get_variable(var_name): str**
@@ -92,10 +85,4 @@ Returns the current play name.
 
 **get_next_task_name(): str**
 Returns the next task name.
-
-**get_last_results(): []ansible.executor.task_result**
-Return a list with results of the last executed task on every host of the currently executing play. Results are objects of the Ansible class [TaskResult](https://github.com/ansible/ansible/blob/devel/lib/ansible/executor/task_result.py#L25). 
-
-**get_results(): []ansible.executor.task_result**
-Returns a list of task results which were obtained during the entire execution (at the calling moment). Results are objects of the Ansible class [TaskResult](https://github.com/ansible/ansible/blob/devel/lib/ansible/executor/task_result.py#L25). 
 
