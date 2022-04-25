@@ -3,6 +3,8 @@ version: "3.7"
 services:
   ansiblehost:
     image: ansible-host-image
+    container_name: ansiblehost
 
-  gocotea:
+  coteahost:
     image: cotea-image
+    container_name: coteahost

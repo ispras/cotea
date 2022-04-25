@@ -8,9 +8,9 @@ Build both images and enter theire names into docker-compose.yaml file. After th
 docker compose up -d
 ```
 
-After that enter into cotea container (make docker ps to obtain cotea container ID):
+After that enter into cotea container:
 ```bash
-docker exec -it COTEA_CONTAINER_ID /bin/bash
+docker exec -it coteahost /bin/bash
 ```
 
 In the container make:
