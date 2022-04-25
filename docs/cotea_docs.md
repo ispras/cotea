@@ -43,13 +43,14 @@ After all of the needed actions, *argument_maker* object should be passed to run
 ### controlling interfaces
 
 **has_next_play(): bool**
+
 Checks if there is unexecuted *plays* in current Ansible execution. Returns *true* if there is.
 
 **has_next_task(): bool**
 Checks if there is unexecuted *tasks* in currently executing *play*. Returns *true* if there is.
 
 **run_next_task(): []TaskResult**
-Runs the next task and returns its results (a list of TaskResult (see below) class objects) on every host in current group. 
+Runs the next task and returns its results (a list of [TaskResult](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md#taskresult) class objects) on every host in current group. 
 
 **finish_ansible()**
 Starts a bunch of actions that are needed to finish the current Ansible execution.
@@ -86,7 +87,7 @@ Returns the [ansible.playbook.task.Task](https://github.com/ansible/ansible/blob
 Returns the name of the previous task.
 
 **get_last_task_result(): []TaskResult**
-Returns a list with TaskResult objects (see below) where each element containes the results of the last task on each of the hosts of the current group.
+Returns a list with [TaskResult](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md#taskresult) objects where each element containes the results of the last task on each of the hosts of the current group.
 
 **was_error(): bool**
 Returns *true* if Ansible execution ends with an error.
