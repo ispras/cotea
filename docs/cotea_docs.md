@@ -47,12 +47,15 @@ After all of the needed actions, *argument_maker* object should be passed to run
 Checks if there is unexecuted *plays* in current Ansible execution. Returns *true* if there is.
 
 **has_next_task(): bool**
+
 Checks if there is unexecuted *tasks* in currently executing *play*. Returns *true* if there is.
 
 **run_next_task(): []TaskResult**
+
 Runs the next task and returns its results (a list of [TaskResult](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md#taskresult) class objects) on every host in current group. 
 
 **finish_ansible()**
+
 Starts a bunch of actions that are needed to finish the current Ansible execution.
 
 These four interfaces are the main part of *cotea*. They let one control the execution of *ansible-playbook* launch. Every usage of cotea will contain them in the following order:
@@ -67,35 +70,45 @@ r.finish_ansible()
 ```
 
 **schedule_last_task_again()**
+
 Queues the last running task for re-execution.
 
 ### debugging interfaces
 
 **get_cur_play_name(): str**
+
 Returns the current play name.
 
 **get_next_task(): ansible.playbook.task.Task**
+
 Returns the [ansible.playbook.task.Task](https://github.com/ansible/ansible/blob/devel/lib/ansible/playbook/task.py#L46) object of the next task.
 
 **get_next_task_name(): str**
+
 Returns the name of the next task.
 
 **get_prev_task(): ansible.playbook.task.Task**
+
 Returns the [ansible.playbook.task.Task](https://github.com/ansible/ansible/blob/devel/lib/ansible/playbook/task.py#L46) object of the previous task.
 
 **get_prev_task_name(): str**
+
 Returns the name of the previous task.
 
 **get_last_task_result(): []TaskResult**
+
 Returns a list with [TaskResult](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md#taskresult) objects where each element containes the results of the last task on each of the hosts of the current group.
 
 **was_error(): bool**
+
 Returns *true* if Ansible execution ends with an error.
 
 **get_error_msg(): str**
+
 Returns Ansible failure message (the last error msg that wasn't ignored).
 
 **get_variable(var_name): str**
+
 - *var_name* - the name of the requested variable
 
 Returns the value of the Ansible variable with name *var_name*.
