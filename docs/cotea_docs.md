@@ -35,7 +35,7 @@ After all of the needed actions, *argument_maker* object should be passed to run
 
 ## runner
 
-**\_\_init\_\_(pb_path, arg_maker=None, debug_lvl=None)**
+**\_\_init\_\_(pb_path, arg_maker, debug_lvl=None)**
 - *pb_path* - path of the playbook .yaml file
 - *arg_maker* - object of *argument_maker* class
 - *debug_lvl* - currently this option is not for user purposes. It is planned that in future this option will this option will give usefull information for *cotea* user
@@ -48,41 +48,67 @@ Checks if there is unexecuted *plays* in current Ansible execution. Returns *tru
 **has_next_task(): bool**
 Checks if there is unexecuted *tasks* in currently executing *play*. Returns *true* if there is.
 
-**run_next_task()**
-Runs the next task and returns its results (a list of TaskResult class objects) on every host in current group. 
+**run_next_task(): []TaskResult**
+Runs the next task and returns its results (a list of TaskResult (see below) class objects) on every host in current group. 
 
 **finish_ansible()**
-Starts a bunch of actions that are needed to finish the current Ansible execution. This method has to be called only when there are no unexecuted *plays* and *tasks* (has_next_play and has_next_task return *false*).
+Starts a bunch of actions that are needed to finish the current Ansible execution.
 
 These four interfaces are the main part of *cotea*. They let one control the execution of *ansible-playbook* launch. Every usage of cotea will contain them in the following order:
 ```python
 # r = runner(...)
 
 while r.has_next_play():
-	while r.has_next_task():
-		r.run_next_task()
+    while r.has_next_task():
+        r.run_next_task()
 
 r.finish_ansible()
 ```
 
 **schedule_last_task_again()**
-Queues the last running task for re-execution
+Queues the last running task for re-execution.
 
 ### debugging interfaces
-**get_variable(var_name): str**
-- *var_name* - the name of the requested variable
 
-Returns value of the Ansible variable with name *var_name*.
+**get_cur_play_name(): str**
+Returns the current play name.
+
+**get_next_task(): ansible.playbook.task.Task**
+Returns the [ansible.playbook.task.Task](https://github.com/ansible/ansible/blob/devel/lib/ansible/playbook/task.py#L46) object of the next task.
+
+**get_next_task_name(): str**
+Returns the name of the next task.
+
+**get_prev_task(): ansible.playbook.task.Task**
+Returns the [ansible.playbook.task.Task](https://github.com/ansible/ansible/blob/devel/lib/ansible/playbook/task.py#L46) object of the previous task.
+
+**get_prev_task_name(): str**
+Returns the name of the previous task.
+
+**get_last_task_result(): []TaskResult**
+Returns a list with TaskResult objects (see below) where each element containes the results of the last task on each of the hosts of the current group.
 
 **was_error(): bool**
 Returns *true* if Ansible execution ends with an error.
 
 **get_error_msg(): str**
-If Ansible execution ends with an error(*was_error* returns *true*), returns error message.
+Returns Ansible failure message (the last error msg that wasn't ignored).
 
-**get_cur_play_name(): str**
-Returns the current play name.
+**get_variable(var_name): str**
+- *var_name* - the name of the requested variable
 
-**get_next_task_name(): str**
-Returns the next task name.
+Returns the value of the Ansible variable with name *var_name*.
 
+
+### TaskResult
+This class stores the task results in a convenient way. Based on [ansible.executor.task_result.TaskResult](https://github.com/ansible/ansible/blob/devel/lib/ansible/executor/task_result.py#L25).
+
+Fields:
+- *result* - dict with keys like "stdout", "invocation", "changed", "failed" and so on
+- *task_name* - the name of the task
+- "task_ansible_object" - the copy of original object of [ansible.executor.task_result.TaskResult](https://github.com/ansible/ansible/blob/devel/lib/ansible/executor/task_result.py#L25)
+- *task_fields* - dict that containes fields of the task (e.g. module arguments)
+-  *is_changed* - True if task is "changed"
+-  *is_failed* - True if task was failed
+-  *is_skipped* - True if task was skipped
+-  *is_unreachable* - True if "unreachable"
