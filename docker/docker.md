@@ -5,7 +5,7 @@ Images:
 
 Build both images and enter theire names into docker-compose.yaml file. After this make:
 ```bash
-docker compose up -d
+docker-compose up -d
 ```
 
 After that enter into cotea container:
