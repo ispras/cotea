@@ -35,6 +35,6 @@ class update_active_conn_wrapper(wrapper_base):
             if res.is_failed() or res.is_unreachable():
                 if hasattr(res, "_result"):
                     if "stderr" in res._result:
-                        self.error_msgs.append(res._result["stderr"])
+                        self.error_msgs.append(str(res._result["stderr"]))
                     elif "msg" in res._result:
-                        self.error_msgs.append(res._result["msg"])
+                        self.error_msgs.append(str(res._result["msg"]))

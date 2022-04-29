@@ -150,7 +150,7 @@ class runner:
     
 
     def get_cur_play_name(self):
-        return self.play_wrp.current_play_name
+        return str(self.play_wrp.current_play_name)
     
 
     def get_next_task(self):
@@ -158,7 +158,7 @@ class runner:
 
 
     def get_next_task_name(self):
-        return self.task_wrp.get_next_task_name()
+        return str(self.task_wrp.get_next_task_name())
     
 
     def get_prev_task(self):
@@ -166,7 +166,7 @@ class runner:
     
 
     def get_prev_task_name(self):
-        return self.task_wrp.get_prev_task_name()
+        return str(self.task_wrp.get_prev_task_name())
     
 
     def get_last_task_result(self):

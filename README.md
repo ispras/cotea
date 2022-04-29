@@ -12,7 +12,7 @@ Tool that provides Python API to run Ansible programmatically.
 
 ## Installation
 ```bash
-pip install -i https://test.pypi.org/simple/ cotea==1.3
+pip install -i https://test.pypi.org/simple/ cotea==1.3.2
 ```
 
 Tested on Ansible 2.9.4, 2.12.2, 2.12.4 in ubuntu 20.04.
