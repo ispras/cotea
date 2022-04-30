@@ -74,6 +74,14 @@ class runner:
         CLI._play_prereqs = self.play_prereqs_wrp
     
 
+    def _set_wrappers_back(self):
+        PlaybookCLI.run = self.pbcli_run_wrp.func
+        StrategyModule.run = self.play_wrp.func
+        StrategyModule._get_next_task_lockstep = self.task_wrp.func
+        StrategyBase.update_active_connections = self.update_conn_wrapper.func
+        CLI._play_prereqs = self.play_prereqs_wrp.func
+    
+
     def _start_ansible(self):
         args = self.arg_maker.args
         args.insert(0, "/usr/local/bin/ansible-playbook")
@@ -147,6 +155,8 @@ class runner:
             self.sync_obj.continue_ansible_with_stop()
         
         self.sync_obj.continue_ansible()
+        self.ansible_thread.join(timeout=5)
+        self._set_wrappers_back()
     
 
     def get_cur_play_name(self):
