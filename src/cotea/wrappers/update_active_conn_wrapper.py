@@ -38,3 +38,5 @@ class update_active_conn_wrapper(wrapper_base):
                         self.error_msgs.append(str(res._result["stderr"]))
                     elif "msg" in res._result:
                         self.error_msgs.append(str(res._result["msg"]))
+                    elif "exception" in res._result:
+                        self.error_msgs.append(str(res._result["exception"]))

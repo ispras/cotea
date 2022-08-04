@@ -1,11 +1,19 @@
-import logging
 import threading
+
+from cotea.utils import remove_modules_from_imported
+
+# during the imports ansible global objects are created
+# that affects to the further work
+remove_modules_from_imported(module_name_like="ansible", not_to_delete="ansible_runner")
+remove_modules_from_imported(module_name_like="logging")
 
 from ansible.cli import CLI
 from ansible.plugins.strategy.linear import StrategyModule
 from ansible.plugins.strategy import StrategyBase
 from ansible.cli.playbook import PlaybookCLI
 from ansible.parsing.yaml.objects import AnsibleUnicode
+from ansible.executor.playbook_executor import PlaybookExecutor
+from ansible.executor.play_iterator import PlayIterator
 
 from cotea.ansible_execution_sync import ans_sync
 from cotea.task_result import TaskResult
@@ -14,13 +22,22 @@ from cotea.wrappers.strategy_run_wrapper import strategy_run_wrapper
 from cotea.wrappers.get_next_task_wrapper import get_next_task_wrapper
 from cotea.wrappers.update_active_conn_wrapper import update_active_conn_wrapper
 from cotea.wrappers.play_prereqs_wrapper import play_prereqs_wrapper
+from cotea.wrappers.playbook_executor_wrapper import play_executor_wrapper
+from cotea.wrappers.iterator_add_task_wrapper import iterator_add_task_wrapper
+from cotea.progress_bar import ansible_progress_bar
+from cotea.ansible_execution_tree import AnsibleExecTree
+
+import logging
+
 
 
 class runner:
-    def __init__(self, pb_path, arg_maker, debug_mod=None):
+    def __init__(self, pb_path, arg_maker, debug_mod=None, show_progress_bar=False):
         logging_lvl = logging.INFO
         if debug_mod:
             logging_lvl= logging.DEBUG
+        
+        self.show_progress_bar = show_progress_bar
         
         logging.basicConfig(format="%(name)s %(asctime)s %(message)s", \
                     datefmt="%H:%M:%S", level=logging_lvl)
@@ -40,6 +57,9 @@ class runner:
         self.breakpoint_labeles["after_play"] = "after_play_run"
         self.breakpoint_labeles["before_task"] = "before_task_run"
         self.breakpoint_labeles["after_task"] = "after_task_run"
+
+        self.progress_bar = ansible_progress_bar()
+        self.execution_tree = AnsibleExecTree()
 
         self._set_wrappers()
         start_ok = self._start_ansible()
@@ -61,7 +81,9 @@ class runner:
 
         self.task_wrp = get_next_task_wrapper(StrategyModule._get_next_task_lockstep,
                                               self.sync_obj, wrp_lgr,
-                                              self.breakpoint_labeles["before_task"])
+                                              self.breakpoint_labeles["before_task"],
+                                              self.progress_bar,
+                                              self.show_progress_bar)
         StrategyModule._get_next_task_lockstep = self.task_wrp
 
         self.update_conn_wrapper = update_active_conn_wrapper(StrategyBase.update_active_connections,
@@ -72,6 +94,18 @@ class runner:
         self.play_prereqs_wrp = play_prereqs_wrapper(CLI._play_prereqs,
                                                       self.sync_obj, wrp_lgr)
         CLI._play_prereqs = self.play_prereqs_wrp
+
+        self.playbook_executor_wrp = play_executor_wrapper(PlaybookExecutor.__init__,
+                                                           self.sync_obj, wrp_lgr,
+                                                           self.execution_tree,
+                                                           self.progress_bar)
+        PlaybookExecutor.__init__ = self.playbook_executor_wrp
+
+        self.iterator_add_task_wrp = iterator_add_task_wrapper(PlayIterator.add_tasks,
+                                                                  self.sync_obj, wrp_lgr,
+                                                                  self.execution_tree,
+                                                                  self.progress_bar)
+        PlayIterator.add_tasks = self.iterator_add_task_wrp
     
 
     def _set_wrappers_back(self):
@@ -80,6 +114,8 @@ class runner:
         StrategyModule._get_next_task_lockstep = self.task_wrp.func
         StrategyBase.update_active_connections = self.update_conn_wrapper.func
         CLI._play_prereqs = self.play_prereqs_wrp.func
+        PlaybookExecutor.__init__ = self.playbook_executor_wrp.func
+        PlayIterator.add_tasks = self.iterator_add_task_wrp.func
     
 
     def _start_ansible(self):
@@ -148,6 +184,17 @@ class runner:
 
     def schedule_last_task_again(self):
         self.task_wrp.run_last_one = True
+    
+    
+    def ignore_errors_of_next_task(self):
+        self.task_wrp.next_task_ignore_errors = True
+
+    def get_already_ignore_failed(self):
+        return self.task_wrp.already_ignore_failed
+
+
+    def get_already_ignore_unrch(self):
+        return self.task_wrp.already_ignore_unrch
 
 
     def finish_ansible(self):

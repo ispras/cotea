@@ -2,6 +2,7 @@ from ansible.inventory.host import Host
 
 from cotea.wrappers.wrapper_base import wrapper_base
 from cotea.wrappers.ansi_breakpoint import ansi_breakpoint
+from cotea.progress_bar import ansible_progress_bar
 
 HOST_IND = 0
 TASK_IND = 1
@@ -9,25 +10,62 @@ TASK_IND = 1
 
 # wraps ansible.plugins.strategy.linear.StrategyModule._get_next_task_lockstep()
 class get_next_task_wrapper(wrapper_base):
-    def __init__(self, func, sync_obj, logger, bp_label):
+    def __init__(self, func, sync_obj, logger, bp_label, progress_bar: ansible_progress_bar, show_progr_bar=False):
         super().__init__(func, sync_obj, logger)
         self.before_task_bp = ansi_breakpoint(sync_obj, bp_label)
         self.prev_tasks = []
         self.next_tasks = []
         self.run_last_one = False
+        self.next_task_ignore_errors = False
+        self.show_progress_bar = show_progr_bar
+
+        self.already_ignore_failed = []
+        self.already_ignore_unrch = []
+
+        self.progress_bar = progress_bar
 
 
     def __call__(self, real_obj, hosts_left, iterator):
         result = None
 
         if self.run_last_one:
-            result = self.prev_tasks
-            self.run_last_one = False
+            self._copy_prev_tasks(self.prev_tasks)
+            result = self.next_tasks
         else:
+            self._copy_prev_tasks(self.next_tasks)
             result = self.func(real_obj, hosts_left, iterator)
+            self.next_tasks = result
 
-        self._copy_prev_tasks(result)
-        self.next_tasks = result
+            self.already_ignore_failed = []
+            self.already_ignore_unrch = []
+        
+        for hosttask in result:
+            if hosttask[TASK_IND]:
+                # if we rerun the task, the list of already ignored tasks
+                # should stay the same
+                if not self.run_last_one:
+                    if hosttask[TASK_IND].ignore_errors:
+                        if hasattr(hosttask[TASK_IND], "get_name"):
+                            self.already_ignore_failed.append(str(hosttask[TASK_IND].get_name()))
+                    
+                    if hosttask[TASK_IND].ignore_unreachable:
+                        if hasattr(hosttask[TASK_IND], "get_name"):
+                            self.already_ignore_unrch.append(str(hosttask[TASK_IND].get_name()))
+
+                if self.next_task_ignore_errors:
+                    hosttask[TASK_IND].ignore_errors = True
+                    hosttask[TASK_IND].ignore_unreachable = True
+        
+        self.run_last_one = False
+        self.next_task_ignore_errors = False
+
+        if self.get_next_task_name() is not None:
+            self.progress_bar.update()
+            
+            if self.show_progress_bar:
+                play_name = iterator._play.get_name()
+                self.progress_bar.print_bar(play_name, self.get_next_task_name())
+
         self.before_task_bp.stop()
         
         '''
