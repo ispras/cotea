@@ -21,8 +21,16 @@ class play_executor_wrapper(wrapper_base):
         self.ansible_exec_tree = exec_tree
         self.progress_bar = progress_bar
 
+        self.loader = None
+        self.variable_manager = None
+        self.inventory = None
+
 
     def __call__(self, real_obj, playbooks, inventory, variable_manager, loader, passwords):
+        self.loader = loader
+        self.variable_manager = variable_manager
+        self.inventory = inventory
+
         self.func(real_obj, playbooks, inventory, variable_manager, loader, passwords)
         connection_lockfile = tempfile.TemporaryFile()
 

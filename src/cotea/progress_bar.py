@@ -13,6 +13,10 @@ class ansible_progress_bar:
         self.executed_count += 1
 
 
+    def add_to_total_task_count(self, num):
+        self.total_task_count += num
+
+
     def print_bar(self, play_name, task_name):
         percent = self.executed_count / self.total_task_count
         divisions = int(percent * self.bar_len)

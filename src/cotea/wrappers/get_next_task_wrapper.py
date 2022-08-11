@@ -15,9 +15,13 @@ class get_next_task_wrapper(wrapper_base):
         self.before_task_bp = ansi_breakpoint(sync_obj, bp_label)
         self.prev_tasks = []
         self.next_tasks = []
-        self.run_last_one = False
-        self.next_task_ignore_errors = False
         self.show_progress_bar = show_progr_bar
+
+        self.rerun_last_task = False
+        self.next_task_ignore_errors = False
+
+        self.new_task_to_add = False
+        self.new_task = None
 
         self.already_ignore_failed = []
         self.already_ignore_unrch = []
@@ -28,24 +32,35 @@ class get_next_task_wrapper(wrapper_base):
     def __call__(self, real_obj, hosts_left, iterator):
         result = None
 
-        if self.run_last_one:
-            self._copy_prev_tasks(self.prev_tasks)
+        new_prev_tasks = self._copy_hosttasks(self.prev_tasks)
+        self.prev_tasks = new_prev_tasks
+
+        if self.new_task_to_add:
+            next_tasks_copy = self._copy_hosttasks(self.next_tasks)
+            next_tasks_with_new_task = self._set_task_in_hosttasks(self.new_task, next_tasks_copy)
+            result = next_tasks_with_new_task
+
+        elif self.rerun_last_task:
             result = self.next_tasks
+
         else:
-            self._copy_prev_tasks(self.next_tasks)
+            new_prev_tasks = self._copy_hosttasks(self.next_tasks)
+            self.prev_tasks = new_prev_tasks
+
             result = self.func(real_obj, hosts_left, iterator)
             self.next_tasks = result
 
             self.already_ignore_failed = []
             self.already_ignore_unrch = []
-        
+                        
         for hosttask in result:
             if hosttask[TASK_IND]:
-                # if we rerun the task, the list of already ignored tasks
-                # should stay the same
-                if not self.run_last_one:
+                # if we rerun the task or add the new one,
+                # the list of already ignored tasks should stay the same
+                if not self.rerun_last_task and not self.new_task_to_add:
                     if hosttask[TASK_IND].ignore_errors:
                         if hasattr(hosttask[TASK_IND], "get_name"):
+                            print(hosttask[TASK_IND].ignore_errors)
                             self.already_ignore_failed.append(str(hosttask[TASK_IND].get_name()))
                     
                     if hosttask[TASK_IND].ignore_unreachable:
@@ -55,16 +70,31 @@ class get_next_task_wrapper(wrapper_base):
                 if self.next_task_ignore_errors:
                     hosttask[TASK_IND].ignore_errors = True
                     hosttask[TASK_IND].ignore_unreachable = True
-        
-        self.run_last_one = False
-        self.next_task_ignore_errors = False
 
         if self.get_next_task_name() is not None:
             self.progress_bar.update()
             
             if self.show_progress_bar:
                 play_name = iterator._play.get_name()
-                self.progress_bar.print_bar(play_name, self.get_next_task_name())
+                task_name = None
+                if self.new_task_to_add:
+                    if hasattr(self.new_task, "get_name"):
+                        task_name = self.new_task.get_name()
+                    else:
+                        task_name = self.get_next_task_name()
+                else:
+                    task_name = self.get_next_task_name()
+                    
+                self.progress_bar.print_bar(play_name, task_name)
+        
+        if self.new_task_to_add:
+            self.rerun_last_task = True
+        else:
+            self.rerun_last_task = False
+
+        self.next_task_ignore_errors = False
+        self.new_task_to_add = False
+        self.new_task = None
 
         self.before_task_bp.stop()
         
@@ -92,8 +122,8 @@ class get_next_task_wrapper(wrapper_base):
         # следующих не осталось -> возвращаем управление, говоря false
 
 
-    def _copy_prev_tasks(self, hosttasks):
-        self.prev_tasks = []
+    def _copy_hosttasks(self, hosttasks):
+        hosttasks_copy = []
 
         for hosttask in hosttasks:
             temp_host = None
@@ -107,7 +137,25 @@ class get_next_task_wrapper(wrapper_base):
                 temp_task = hosttask[TASK_IND].copy()
 
             if temp_host:
-                self.prev_tasks.append( (temp_host, temp_task) )
+                hosttasks_copy.append( (temp_host, temp_task) )
+        
+        return hosttasks_copy
+    
+
+    def _set_task_in_hosttasks(self, new_task, hosttasks):
+        hosttasks_with_new_task = []
+
+        for hosttask in hosttasks:
+            temp_host = None
+
+            if hosttask[HOST_IND]:
+                temp_host = Host()
+                temp_host.deserialize(hosttask[HOST_IND].serialize())
+
+            if temp_host:
+                hosttasks_with_new_task.append( (temp_host, new_task) )
+        
+        return hosttasks_with_new_task
 
 
     def get_next_task(self):

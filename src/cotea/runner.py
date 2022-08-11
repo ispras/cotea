@@ -14,6 +14,9 @@ from ansible.cli.playbook import PlaybookCLI
 from ansible.parsing.yaml.objects import AnsibleUnicode
 from ansible.executor.playbook_executor import PlaybookExecutor
 from ansible.executor.play_iterator import PlayIterator
+from ansible import constants as C
+from ansible.playbook.task import Task
+from ansible.playbook.helpers import load_list_of_tasks
 
 from cotea.ansible_execution_sync import ans_sync
 from cotea.task_result import TaskResult
@@ -182,9 +185,89 @@ class runner:
         return res
     
 
-    def schedule_last_task_again(self):
-        self.task_wrp.run_last_one = True
+    def rerun_last_task(self):
+        self.task_wrp.rerun_last_task = True
     
+
+    # returns True and empty string if success
+    #         False and error msg otherwise
+    def add_new_task(self, new_task_str):
+        loader = self.playbook_executor_wrp.loader
+
+        ds = None
+        try:
+            ds = loader.load(new_task_str)
+        except Exception as e:
+            return False, "Exception during loader.load call\
+                (from str to python ds): {}".format(str(e))
+        
+        if hasattr(ds, "__len__"):
+            if len(ds) != 1:
+                return False, "You must add 1 new task. Instead you add: {}".format(str(ds))
+        else:
+            return False, "Python repr of the input string should have\
+                        __len__ attr. Maybe something wrong with input: {}\n\
+                        Python repr without __len__ attr: {}".format(new_task_str, str(ds))
+
+        current_play = self.play_wrp.iterator._play
+        variable_manager = self.playbook_executor_wrp.variable_manager
+
+        try:
+            new_ansible_task = load_list_of_tasks(ds=ds, play=current_play, \
+                variable_manager=variable_manager, loader=loader)
+        except Exception as e:
+            return False, "Exception during load_list_of_tasks call\
+                (creats Ansible.Task objects): {}".format(str(e))
+        
+        if hasattr(new_ansible_task, "__len__"):
+            new_tasks_count = len(new_ansible_task)
+            if new_tasks_count != 1:
+                return False, "The input '{}' has been interpreted into {} tasks\
+                               instead of 1. Interpretation \
+                                result: {}".format(new_task_str, new_tasks_count, str(ds))
+        else:
+            return False, "Python repr of the input string should have\
+                        __len__ attr. Maybe something wrong with input: {}\n\
+                        Python repr without __len__ attr: {}".format(new_task_str, str(ds))
+        
+        # new_task doesn't have parent and parent_type attrs
+        # we will take them from previous task
+        new_task = new_ansible_task[0]
+        ser_new_task = new_task.serialize()
+        
+        prev_task = self.get_prev_task()
+        ser_prev_task = prev_task.serialize()
+
+        if "parent" not in ser_prev_task:
+            return False, "Previous task doesn't have 'parent' attr but should.\n\
+                Previous task serialize view: {}".format(str(ser_prev_task))
+
+        if hasattr(ser_prev_task["parent"], "copy"):
+            ser_new_task["parent"] = ser_prev_task["parent"].copy()
+        else:
+            return False, "Previous task 'parent' attr doesn't have 'copy' attr but should\
+                 because it should be dict. 'parent' attr: {}".format(str(ser_prev_task))
+
+        if "parent_type" not in ser_prev_task:
+            return False, "Previous task doesn't have 'parent_type' attr but should.\n\
+                Previous task serialize view: {}".format(str(ser_prev_task))
+        
+        ser_new_task["parent_type"] = ser_prev_task["parent_type"]
+
+        final_new_task = Task()
+        final_new_task.deserialize(ser_new_task)
+
+        # needs to be processed properly
+        try:
+            final_new_task._parent._play = prev_task._parent._play.copy()
+        except:
+            final_new_task._parent._play = current_play.copy() 
+        
+        self.task_wrp.new_task_to_add = True
+        self.task_wrp.new_task = final_new_task
+
+        return True, ""
+
     
     def ignore_errors_of_next_task(self):
         self.task_wrp.next_task_ignore_errors = True

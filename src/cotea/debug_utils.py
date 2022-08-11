@@ -12,6 +12,7 @@ def print_help_msg():
     help_msg += "'re' - RErun of the failed task\n"
     help_msg += "'v' - add new Variable as extra var\n"
     help_msg += "'c' - Continue ansible execution (go to the next task)\n"
+    help_msg += "'nt' - add New Task\n"
     #help_msg += "'f' - Finish ansible execution\n"
 
     print(help_msg)
@@ -53,7 +54,8 @@ def interactive_discotech(failed_task: Task, r: runner):
             pretty_print_task(failed_task)
 
         elif command == "re":
-            r.schedule_last_task_again()
+            r.rerun_last_task()
+            r.progress_bar.add_to_total_task_count(1)
             break
 
         elif command == "msg":
@@ -86,6 +88,23 @@ def interactive_discotech(failed_task: Task, r: runner):
             play_name = r.get_cur_play_name()
             next_task = r.get_next_task_name()
             r.progress_bar.print_bar(play_name, next_task)
+        
+        elif command == "nt":
+            print("Enter new task like a string entering all \\n and spaces needed:")
+            new_task_str = input()
+
+            # TODO: not sure that this is a good solution
+            #       however, this is interactive mode and
+            #       we always can say to user that he is wrong
+            new_task_str = new_task_str.replace("\\n", "\n")
+            add_ok, err_msg = r.add_new_task(new_task_str)
+
+            if not add_ok:
+                print("\nThe adding process was failed with the error:\n", err_msg)
+            else:
+                print("\nNew task was added! It will run on every host of current inventory.")
+                print("Press 'c' after this, not 're'. This will run new task and the failed one after it.\n")
+                r.progress_bar.add_to_total_task_count(1)
 
         elif command == "help" or command == "h":
             print_help_msg()
