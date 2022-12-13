@@ -69,7 +69,7 @@ while r.has_next_play():
 r.finish_ansible()
 ```
 
-**schedule_last_task_again()**
+**rerun_last_task()**
 
 Queues the last running task for re-execution.
 
@@ -126,3 +126,6 @@ Fields:
 -  *is_failed* - True if task was failed
 -  *is_skipped* - True if task was skipped
 -  *is_unreachable* - True if "unreachable"
+-  *stdout* - str that containes stdout of the executed task
+-  *stderr* - str that containes stderr of the executed task
+-  *msg* - str that containes message that is constructed by Ansible (for example, in the case of the fail of task, it containes the reason of failure)
