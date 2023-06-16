@@ -15,7 +15,9 @@ class get_next_task_wrapper(wrapper_base):
         self.before_task_bp = ansi_breakpoint(sync_obj, bp_label)
         self.prev_tasks = []
         self.next_tasks = []
+        self.task_before_new = None
         self.show_progress_bar = show_progr_bar
+        self.hosts_left = None
 
         self.rerun_last_task = False
         self.next_task_ignore_errors = False
@@ -30,23 +32,25 @@ class get_next_task_wrapper(wrapper_base):
 
 
     def __call__(self, real_obj, hosts_left, iterator):
+        self.hosts_left = real_obj.get_hosts_left(iterator)
         result = None
 
-        new_prev_tasks = self._copy_hosttasks(self.prev_tasks)
-        self.prev_tasks = new_prev_tasks
-
         if self.new_task_to_add:
-            next_tasks_copy = self._copy_hosttasks(self.next_tasks)
-            next_tasks_with_new_task = self._set_task_in_hosttasks(self.new_task, next_tasks_copy)
-            result = next_tasks_with_new_task
+            self.task_before_new = self._copy_hosttasks(self.prev_tasks)
+            prev_tasks_with_new_task_set = self._set_task_in_hosttasks(self.new_task, self.task_before_new)
+            self.next_tasks = prev_tasks_with_new_task_set
+            result = prev_tasks_with_new_task_set
 
         elif self.rerun_last_task:
+            if self.task_before_new:
+                self.next_tasks = self._copy_hosttasks(self.task_before_new)
+                self.task_before_new = None
+            else:
+                self.next_tasks = self._copy_hosttasks(self.prev_tasks)
+            
             result = self.next_tasks
 
         else:
-            new_prev_tasks = self._copy_hosttasks(self.next_tasks)
-            self.prev_tasks = new_prev_tasks
-
             result = self.func(real_obj, hosts_left, iterator)
             self.next_tasks = result
 
@@ -97,29 +101,8 @@ class get_next_task_wrapper(wrapper_base):
         self.new_task = None
 
         self.before_task_bp.stop()
-        
-        '''
-        self.logger.info("task run")
-        #print(dir(result[0][1]))
-        #print(dir(result[0][1]._name))
-        if result[0][1] != None:
-            if result[0][1].name == "Execute bad command":
-                self.zapas_task = result[0][1].copy()
-        else:
-            if self.zapas_task != None:
-                print("aaaaa")
-                return [(result[0][0], self.zapas_task)]
-        #self.sync_obj.continue_runner_with_stop()
-
-        print("zapas:", type(self.zapas_task))
-        '''
 
         return result
-
-        # все следующие - meta -> прокручиваем их без стопа и без
-        #                         возврата управления
-        # следующий - норм таск -> возвращаем управление, говоря true
-        # следующих не осталось -> возвращаем управление, говоря false
 
 
     def _copy_hosttasks(self, hosttasks):
@@ -140,7 +123,12 @@ class get_next_task_wrapper(wrapper_base):
                 hosttasks_copy.append( (temp_host, temp_task) )
         
         return hosttasks_copy
-    
+
+
+    def set_next_to_prev(self):
+        self.prev_tasks = self._copy_hosttasks(self.next_tasks)
+        self.next_tasks = []
+
 
     def _set_task_in_hosttasks(self, new_task, hosttasks):
         hosttasks_with_new_task = []
@@ -196,3 +184,8 @@ class get_next_task_wrapper(wrapper_base):
             res = prev_task.get_name()
         
         return res
+    
+    
+    def skip_next_task(self):
+        for host in self.hosts_left:
+            self.ansible_iterator.get_next_task_for_host(host)

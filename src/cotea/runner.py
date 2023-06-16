@@ -33,7 +33,6 @@ from cotea.ansible_execution_tree import AnsibleExecTree
 import logging
 
 
-
 class runner:
     def __init__(self, pb_path, arg_maker, debug_mod=None, show_progress_bar=False):
         logging_lvl = logging.INFO
@@ -181,7 +180,9 @@ class runner:
         
         for task_result_ansible_obj in self.update_conn_wrapper.current_results:
             res.append(TaskResult(task_result_ansible_obj))
-        
+
+        self.task_wrp.set_next_to_prev()
+
         return res
     
 
