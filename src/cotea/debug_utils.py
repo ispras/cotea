@@ -13,6 +13,7 @@ def print_help_msg():
     help_msg += "'v' - add new Variable as extra var\n"
     help_msg += "'c' - Continue ansible execution (go to the next task)\n"
     help_msg += "'nt' - add New Task\n"
+    help_msg += "'w' - Watch ansible variable value\n"
     #help_msg += "'f' - Finish ansible execution\n"
 
     print(help_msg)
@@ -105,6 +106,15 @@ def interactive_discotech(failed_task: Task, r: runner):
                 print("\nNew task was added! It will run on every host of current inventory.")
                 print("Press 'c' after this, not 're'. This will run new task and the failed one after it.\n")
                 r.progress_bar.add_to_total_task_count(1)
+        
+        elif command == "w":
+            print("Enter var name: ", end="")
+            
+            var_name = input()
+            value = r.get_variable(var_name)
+            msg = "{} var value:\n{}".format(var_name, value)
+            
+            print(msg)
 
         elif command == "help" or command == "h":
             print_help_msg()
