@@ -1,0 +1,33 @@
+name: learn-github-actions
+run-name: ${{ github.actor }} is learning GitHub Actions
+on: [push]
+jobs:
+  cotea_tests_run:
+    runs-on: ubuntu-latest
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: False
+    services:
+      ansiblehost:
+        image: dbadalyan/ansible_host_special
+        ports:
+          - 2222:22
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Checkout
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      -
+        name: Install dependencies
+        run: pip install ansible
+        
+      -
+        name: Run tests
+        run: |
+          cd ./src
+          python cotea_ok_case.py
+          python cotea_ansible_error_case.py

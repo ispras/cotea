@@ -1,0 +1,5 @@
+[host1]           
+host1       ansible_host=localhost      ansible_connection=ssh      ansible_ssh_port=2222      ansible_user=root      ansible_password=amella
+
+[targets]
+host1

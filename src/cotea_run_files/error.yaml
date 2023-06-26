@@ -1,0 +1,6 @@
+---
+- name: Play1
+  hosts: all
+  tasks:
+  - name: Error command
+    shell: "mv biba boba"
