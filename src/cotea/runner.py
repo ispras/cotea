@@ -404,28 +404,4 @@ class runner:
 
         ansible_way_var = AnsibleUnicode(new_var_name)
         variable_manager._extra_vars[ansible_way_var] = value
-   
-    
-    def _getIP(self):
-        var_name = "openstack_servers"
-        host_name = "localhost"
-        ip1_field_name = "interface_ip"
-        ip2_field_name = "private_v4"
-
-        res = ""
-        ostack_var = self.get_variable(var_name)
-
-        try:
-            if ip1_field_name in ostack_var[host_name][0]:
-                res = str(ostack_var[host_name][0][ip1_field_name])
-            elif ip2_field_name in ostack_var[host_name][0]:
-                res = str(ostack_var[host_name][0][ip2_field_name])
-        except Exception as e:
-            self.logger.info("During runner._getIP() call error was occured. We skipped it.")
-            self.logger.info("Error is:\n%s", e)
-
-        self.logger.debug("get_ip res = %s", res)
-        self.logger.debug(type(res))
-
-        return res
 
