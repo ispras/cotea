@@ -274,11 +274,11 @@ class runner:
         self.task_wrp.next_task_ignore_errors = True
 
     def get_already_ignore_failed(self):
-        return self.task_wrp.already_ignore_failed
+        return self.task_wrp.should_ignored_errors_uuids
 
 
     def get_already_ignore_unrch(self):
-        return self.task_wrp.already_ignore_unrch
+        return self.task_wrp.should_ignored_unrch_uuids
 
 
     def finish_ansible(self):

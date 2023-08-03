@@ -25,8 +25,8 @@ class get_next_task_wrapper(wrapper_base):
         self.new_task_to_add = False
         self.new_task = None
 
-        self.already_ignore_failed = []
-        self.already_ignore_unrch = []
+        self.should_ignored_errors_uuids = []
+        self.should_ignored_unrch_uuids = []
 
         self.progress_bar = progress_bar
 
@@ -54,8 +54,8 @@ class get_next_task_wrapper(wrapper_base):
             result = self.func(real_obj, hosts_left, iterator)
             self.next_tasks = result
 
-            self.already_ignore_failed = []
-            self.already_ignore_unrch = []
+            self.should_ignored_errors_uuids = []
+            self.should_ignored_unrch_uuids = []
                         
         for hosttask in result:
             if hosttask[TASK_IND]:
@@ -64,12 +64,13 @@ class get_next_task_wrapper(wrapper_base):
                 if not self.rerun_last_task and not self.new_task_to_add:
                     if hosttask[TASK_IND].ignore_errors:
                         if hasattr(hosttask[TASK_IND], "get_name"):
-                            print(hosttask[TASK_IND].ignore_errors)
-                            self.already_ignore_failed.append(str(hosttask[TASK_IND].get_name()))
+                            if hasattr(hosttask[TASK_IND], "_uuid"):
+                                self.should_ignored_errors_uuids.append(hosttask[TASK_IND]._uuid)
                     
                     if hosttask[TASK_IND].ignore_unreachable:
                         if hasattr(hosttask[TASK_IND], "get_name"):
-                            self.already_ignore_unrch.append(str(hosttask[TASK_IND].get_name()))
+                            if hasattr(hosttask[TASK_IND], "_uuid"):
+                                self.should_ignored_unrch_uuids.append(hosttask[TASK_IND]._uuid)
 
                 if self.next_task_ignore_errors:
                     hosttask[TASK_IND].ignore_errors = True
