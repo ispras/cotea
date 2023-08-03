@@ -1,11 +1,11 @@
 import threading
 
-from cotea.utils import remove_modules_from_imported
+import cotea.utils as cotea_utils
 
 # during the imports ansible global objects are created
 # that affects to the further work
-remove_modules_from_imported(module_name_like="ansible", not_to_delete="ansible_runner")
-remove_modules_from_imported(module_name_like="logging")
+cotea_utils.remove_modules_from_imported(module_name_like="ansible", not_to_delete="ansible_runner")
+cotea_utils.remove_modules_from_imported(module_name_like="logging")
 
 from ansible.cli import CLI
 from ansible.plugins.strategy.linear import StrategyModule
@@ -97,11 +97,12 @@ class runner:
                                                       self.sync_obj, wrp_lgr)
         CLI._play_prereqs = self.play_prereqs_wrp
 
-        self.playbook_executor_wrp = play_executor_wrapper(PlaybookExecutor.__init__,
-                                                           self.sync_obj, wrp_lgr,
-                                                           self.execution_tree,
-                                                           self.progress_bar)
-        PlaybookExecutor.__init__ = self.playbook_executor_wrp
+        if self.show_progress_bar:
+            self.playbook_executor_wrp = play_executor_wrapper(PlaybookExecutor.__init__,
+                                                            self.sync_obj, wrp_lgr,
+                                                            self.execution_tree,
+                                                            self.progress_bar)
+            PlaybookExecutor.__init__ = self.playbook_executor_wrp
 
         self.iterator_add_task_wrp = iterator_add_task_wrapper(PlayIterator.add_tasks,
                                                                   self.sync_obj, wrp_lgr,
@@ -116,8 +117,9 @@ class runner:
         StrategyModule._get_next_task_lockstep = self.task_wrp.func
         StrategyBase.update_active_connections = self.update_conn_wrapper.func
         CLI._play_prereqs = self.play_prereqs_wrp.func
-        PlaybookExecutor.__init__ = self.playbook_executor_wrp.func
         PlayIterator.add_tasks = self.iterator_add_task_wrp.func
+        if self.show_progress_bar:
+            PlaybookExecutor.__init__ = self.playbook_executor_wrp.func
     
 
     def _start_ansible(self):
@@ -192,82 +194,96 @@ class runner:
 
     # returns True and empty string if success
     #         False and error msg otherwise
-    def add_new_task(self, new_task_str):
-        loader = self.playbook_executor_wrp.loader
+    def add_new_task(self, new_task_str, is_dict=False):
+        prev_task = self.get_prev_task()
+        curr_block = None
+
+        has_attrs, error_msg = cotea_utils.obj_has_attrs(prev_task, ["_parent"])
+        if not has_attrs:
+            return False, error_msg
+        
+        curr_block = prev_task._parent
+        block_attrs = ["_loader", "_play", "_role", "_variable_manager", "_use_handlers"]
+        has_attrs, error_msg = cotea_utils.obj_has_attrs(curr_block, block_attrs)
+        if not has_attrs:
+            return False, error_msg
+
+        loader = curr_block._loader
 
         ds = None
+        if not is_dict:
+            try:
+                ds = loader.load(new_task_str)
+            except Exception as e:
+                error_msg = "Exception during loader.load call, is_dict is {} "
+                error_msg += "(from str to python ds): {}"
+                return False, error_msg.format(is_dict, str(e))
+        else:
+            try:
+                new_task_str_dict = json.loads(new_task_str)
+            except Exception as e:
+                error_msg = "Exception during json.loads call, is_dict is {} "
+                error_msg += "(from str-aka-dict to python ds): {}"
+                return False, error_msg.format(is_dict, str(e))
+            ds = [new_task_str_dict]
+        
+        #print("DS:\n", ds)
+        
+        has_attrs, _ = cotea_utils.obj_has_attrs(ds, ["__len__"])
+        if not has_attrs:
+            error_msg = "Python repr of the input string should have "
+            error_msg += "__len__ attr. Maybe something wrong with input: {}\n"
+            error_msg += "Python repr without __len__ attr: {}"
+            return False, error_msg.format(new_task_str, str(ds))
+            
+        if len(ds) != 1:
+            error_msg = "You must add 1 new task. Instead you add: {}"
+            return False, error_msg.format(str(ds))
+
+        curr_play = curr_block._play
+        #curr_role = curr_block._role
+        variable_manager = curr_block._variable_manager
+        use_handlers=curr_block._use_handlers
+
         try:
-            ds = loader.load(new_task_str)
+            new_ansible_task = load_list_of_tasks(
+                ds=ds,
+                play=curr_play,
+                block=curr_block,
+                #role=curr_role,
+                variable_manager=variable_manager,
+                loader=loader,
+                use_handlers=use_handlers,
+            )
+
         except Exception as e:
-            return False, "Exception during loader.load call\
-                (from str to python ds): {}".format(str(e))
+            error_msg = "Exception during load_list_of_tasks call "
+            error_msg += "(creats Ansible.Task objects): {}"
+            return False, error_msg.format(str(e))
         
-        if hasattr(ds, "__len__"):
-            if len(ds) != 1:
-                return False, "You must add 1 new task. Instead you add: {}".format(str(ds))
-        else:
-            return False, "Python repr of the input string should have\
-                        __len__ attr. Maybe something wrong with input: {}\n\
-                        Python repr without __len__ attr: {}".format(new_task_str, str(ds))
+        has_attrs, _ = cotea_utils.obj_has_attrs(new_ansible_task, ["__len__"])
+        if not has_attrs:
+            error_msg = "Python repr of the input string should have "
+            error_msg += "__len__ attr. Maybe something wrong with input: {}\n"
+            error_msg += "Python repr without __len__ attr: {}"
+            return False, error_msg.format(new_task_str, str(ds))
 
-        current_play = self.play_wrp.iterator._play
-        variable_manager = self.playbook_executor_wrp.variable_manager
-
-        try:
-            new_ansible_task = load_list_of_tasks(ds=ds, play=current_play, \
-                variable_manager=variable_manager, loader=loader)
-        except Exception as e:
-            return False, "Exception during load_list_of_tasks call\
-                (creats Ansible.Task objects): {}".format(str(e))
+        new_tasks_count = len(new_ansible_task)
+        if new_tasks_count != 1:
+            error_msg = "The input '{}' has been interpreted into {} tasks "
+            error_msg += "instead of 1. Interpretation result: {}"
+            return False, error_msg.format(new_task_str, new_tasks_count, str(ds))
         
-        if hasattr(new_ansible_task, "__len__"):
-            new_tasks_count = len(new_ansible_task)
-            if new_tasks_count != 1:
-                return False, "The input '{}' has been interpreted into {} tasks\
-                               instead of 1. Interpretation \
-                                result: {}".format(new_task_str, new_tasks_count, str(ds))
-        else:
-            return False, "Python repr of the input string should have\
-                        __len__ attr. Maybe something wrong with input: {}\n\
-                        Python repr without __len__ attr: {}".format(new_task_str, str(ds))
+        #self.task_wrp.new_task_to_add = True
+        self.task_wrp.new_task = new_ansible_task[0]
         
-        # new_task doesn't have parent and parent_type attrs
-        # we will take them from previous task
-        new_task = new_ansible_task[0]
-        ser_new_task = new_task.serialize()
-        
-        prev_task = self.get_prev_task()
-        ser_prev_task = prev_task.serialize()
+        adding_res, error_msg = self.task_wrp.add_tasks(new_ansible_task)
 
-        if "parent" not in ser_prev_task:
-            return False, "Previous task doesn't have 'parent' attr but should.\n\
-                Previous task serialize view: {}".format(str(ser_prev_task))
+        return adding_res, error_msg
 
-        if hasattr(ser_prev_task["parent"], "copy"):
-            ser_new_task["parent"] = ser_prev_task["parent"].copy()
-        else:
-            return False, "Previous task 'parent' attr doesn't have 'copy' attr but should\
-                 because it should be dict. 'parent' attr: {}".format(str(ser_prev_task))
-
-        if "parent_type" not in ser_prev_task:
-            return False, "Previous task doesn't have 'parent_type' attr but should.\n\
-                Previous task serialize view: {}".format(str(ser_prev_task))
-        
-        ser_new_task["parent_type"] = ser_prev_task["parent_type"]
-
-        final_new_task = Task()
-        final_new_task.deserialize(ser_new_task)
-
-        # needs to be processed properly
-        try:
-            final_new_task._parent._play = prev_task._parent._play.copy()
-        except:
-            final_new_task._parent._play = current_play.copy() 
-        
-        self.task_wrp.new_task_to_add = True
-        self.task_wrp.new_task = final_new_task
-
-        return True, ""
+    
+    def get_new_added_task(self):
+        return self.task_wrp.new_task
 
     
     def ignore_errors_of_next_task(self):
@@ -405,3 +421,6 @@ class runner:
         ansible_way_var = AnsibleUnicode(new_var_name)
         variable_manager._extra_vars[ansible_way_var] = value
 
+
+    def get_stats(self):
+        return self.play_wrp.custom_stats

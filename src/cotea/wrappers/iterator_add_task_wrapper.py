@@ -82,5 +82,5 @@ def _get_all_block_tasks_rec(new_tasks: list, block: Block):
             else:
                 print("in 'block' list object is not Task/Block type:", type(task_or_block), task_or_block)
 
-    else:
-        print("block has no 'block' attr:", block)
+    #else:
+    #    print("block has no 'block' attr:", block)

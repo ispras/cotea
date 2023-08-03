@@ -16,6 +16,8 @@ class strategy_run_wrapper(wrapper_base):
         self.hosts = None
         self.hosts_all = None
         self.was_error = False
+        self.strategy_obj = None
+        self.stats = None
 
 
     def __call__(self, real_obj, iterator, play_context):
@@ -27,6 +29,13 @@ class strategy_run_wrapper(wrapper_base):
         self.variable_manager = real_obj._variable_manager
         self.hosts = real_obj._hosts_cache
         self.hosts_all = real_obj._hosts_cache_all
+        self.custom_stats = None
+        
+        if hasattr(real_obj._tqm, "_stats"):
+            if hasattr(real_obj._tqm._stats, "custom"):
+                self.custom_stats = real_obj._tqm._stats.custom
+
+        self.strategy_obj = real_obj
         try:
             self.current_play_name = iterator._play.get_name()
         except:
@@ -36,9 +45,9 @@ class strategy_run_wrapper(wrapper_base):
 
         result = self.func(real_obj, iterator, play_context)
 
-        self.iterator = None
-        self.play_context = None
-        self.current_play_name = None
+        # self.iterator = None
+        # self.play_context = None
+        # self.current_play_name = None
         
         self.logger.debug("play end")
         

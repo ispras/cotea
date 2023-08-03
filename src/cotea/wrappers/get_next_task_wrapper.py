@@ -21,6 +21,7 @@ class get_next_task_wrapper(wrapper_base):
 
         self.rerun_last_task = False
         self.next_task_ignore_errors = False
+        self.adding_last_task_after_new = True
 
         self.new_task_to_add = False
         self.new_task = None
@@ -92,13 +93,14 @@ class get_next_task_wrapper(wrapper_base):
                     
                 self.progress_bar.print_bar(play_name, task_name)
         
-        if self.new_task_to_add:
+        if self.new_task_to_add and self.adding_last_task_after_new:
             self.rerun_last_task = True
         else:
             self.rerun_last_task = False
 
         self.next_task_ignore_errors = False
         self.new_task_to_add = False
+        self.adding_last_task_after_new = True
         self.new_task = None
 
         self.before_task_bp.stop()
@@ -147,6 +149,21 @@ class get_next_task_wrapper(wrapper_base):
         return hosttasks_with_new_task
 
 
+    def add_tasks(self, new_tasks):
+        if self.strategy_obj and self.play_iterator:
+            hosts_left = self.strategy_obj.get_hosts_left(self.play_iterator)
+
+            for host in hosts_left:
+                self.play_iterator.add_tasks(host, new_tasks)
+
+            return True, ""
+        
+        error_msg = "Some of the needed objects are None. Most likely "
+        error_msg += "the Ansible execution went further than expected"
+
+        return False, error_msg
+
+
     def get_next_task(self):
         res = None
         
@@ -190,3 +207,7 @@ class get_next_task_wrapper(wrapper_base):
     def skip_next_task(self):
         for host in self.hosts_left:
             self.ansible_iterator.get_next_task_for_host(host)
+    
+
+    def dont_add_last_task_after_new(self):
+        self.adding_last_task_after_new = False
