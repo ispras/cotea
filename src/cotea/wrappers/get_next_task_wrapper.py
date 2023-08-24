@@ -24,6 +24,8 @@ class get_next_task_wrapper(wrapper_base):
         self.adding_last_task_after_new = True
 
         self.new_task_to_add = False
+        self.play_iterator = None
+        self.strategy_obj = None
         self.new_task = None
 
         self.should_ignored_errors_uuids = []
@@ -33,8 +35,11 @@ class get_next_task_wrapper(wrapper_base):
 
 
     def __call__(self, real_obj, hosts_left, iterator):
-        self.hosts_left = real_obj.get_hosts_left(iterator)
         result = None
+        self.strategy_obj = real_obj
+        self.play_iterator = iterator
+
+        self.hosts_left = real_obj.get_hosts_left(iterator)
 
         if self.new_task_to_add:
             self.task_before_new = self._copy_hosttasks(self.prev_tasks)

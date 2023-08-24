@@ -1,3 +1,4 @@
+import json
 import threading
 
 import cotea.utils as cotea_utils
@@ -288,6 +289,11 @@ class runner:
     
     def ignore_errors_of_next_task(self):
         self.task_wrp.next_task_ignore_errors = True
+
+    
+    def dont_add_last_task_after_new(self):
+        self.task_wrp.dont_add_last_task_after_new()
+
 
     def get_already_ignore_failed(self):
         return self.task_wrp.should_ignored_errors_uuids

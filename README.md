@@ -12,10 +12,8 @@ Tool that provides Python API to run Ansible programmatically.
 
 ## Installation
 ```bash
-pip install -i https://test.pypi.org/simple/ cotea==1.3.2
+pip install cotea
 ```
-
-Tested on Ansible 2.9.4, 2.12.2, 2.12.4 in ubuntu 20.04.
 
 ## Quick start
 ```python
@@ -25,8 +23,15 @@ from cotea.arguments_maker import argument_maker
 inv_path = "/path/to/inventory"
 playbook_path = "/path/to/playbook"
 
-am = argument_maker()
-am.add_arg("-i", inv_path)
+arg_maker = argument_maker()
+
+# setting ansible-playbook flags
+arg_maker.add_arg("-i", inv_path)
+arg_maker.add_arg("-vvv")
+
+# setting extra-vars
+extra_vars = {"SPARK_VERSION": "3.0.2"}
+arg_maker.add_arg("--extra-vars", extra_vars)
 
 r = runner(playbook_path, am)
 
@@ -44,32 +49,63 @@ r.finish_ansible()
 ```
 Any argument of the "ansible-playbook" command can be passed by using **argument_maker** objects.
 The launch and control of the Ansible is carried out using the **runner** object.
+With the help of cotea one can do certain things dynamically at specific Ansible execution points.
 
 ## Debugging 
 
 ```python
 # imports and object creation...
 
-specific_play = "s_play"
-specific_task = "s_task"
-s_var_name = "s_var"
-
 while r.has_next_play():
-    current_play = r.get_cur_play_name()
-
     while r.has_next_task():
-        next_task = r.get_next_task_name()
-        if current_play == specific_play and next_task == specific_task:
-            # getting variable at specific execution point
-            s_var_value = r.get_variable(s_var_name)
+        task_results = r.run_next_task()
+    
+        some_task_failed = False
+        failed_task = None
 
-        r.run_next_task()
+        already_ignore_failed = r.get_already_ignore_failed()
+        already_ignore_unrch = r.get_already_ignore_unrch()
+
+        for task in task_results:
+            task_uuid = task.original_task_uuid
+            
+            # checking that task didn't have ignore_errors: true
+            if task.is_failed:    
+                if not task_uuid in already_ignore_failed:
+                    some_task_failed = True
+                    failed_task = task.task_ansible_object
+                    break
+            
+            # checking that task didn't have ignore_unreachable: true
+            if task.is_unreachable:    
+                if not task_uuid in already_ignore_unrch:
+                    some_task_failed = True
+                    failed_task = task.task_ansible_object
+                    break
+        
+        # the task was failed and didn't have
+        # ignore_errors or ignore_unreachable flags -
+        # going to interactive debugging mod
+        if some_task_failed:
+            interactive_discotech(failed_task, r)
+
+        r.ignore_errors_of_next_task()
+
 
 r.finish_ansible()
 
 if r.was_error():
     print("Ansible error was:", r.get_error_msg())
 ```
-With the help of cotea one can do certain things dynamically at specific Ansible execution points. Getting the value of a specific variable at a specific execution point is shown above (the point is determined by a pair of Ansible play and task). If ansible exits with an error one can get the error message programmatically without processing a huge log file.
+Cotea also contains interactive debugging mode. Using the cotea one can detects that the task was failed in runtime (including the check that task didn't have ignore_errors or ignore_unreachable flag) and call the *interactive_discotech()* method in that case as shown above.  Supported commands:
+- 'ft' - print info about the Failed Task
+- 'msg' - print all ansible error MSGs (including the ignored ones)
+- 'p' - print Progress bar
+- 'h'/'help' - print help message
+- 're' - RErun of the failed task
+- 'v' - add new Variable as extra var
+- 'c' - Continue ansible execution (go to the next task)
+- 'nt' - add New Task
+- 'w' - Watch ansible variable value
 
-A detailed overview of all interfaces is provided in [cotea documentation](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md).
+A detailed overview of all interfaces is provided in [cotea documentation](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md). The full review of cotea debugging mode will be added to documentation soon.
