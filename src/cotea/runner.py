@@ -430,3 +430,8 @@ class runner:
 
     def get_stats(self):
         return self.play_wrp.custom_stats
+
+
+    def skip_next_task(self):
+        skipped_task_name = self.task_wrp.skip_next_task()
+        return skipped_task_name

@@ -210,8 +210,22 @@ class get_next_task_wrapper(wrapper_base):
     
     
     def skip_next_task(self):
+        skipped_tasks = []
         for host in self.hosts_left:
-            self.ansible_iterator.get_next_task_for_host(host)
+            host_state_block_and_task = self.play_iterator.get_next_task_for_host(host)
+            skipped_task = host_state_block_and_task[len(host_state_block_and_task) - 1]
+            skipped_tasks.append(skipped_task)
+
+        skipped_task_name = ""
+
+        if len(skipped_tasks) > 0:
+            # task should be tha same on all hosts
+            task = skipped_tasks[0]
+
+            if hasattr(task, "get_name"):
+                skipped_task_name = str(task.get_name())
+        
+        return skipped_task_name
     
 
     def dont_add_last_task_after_new(self):
