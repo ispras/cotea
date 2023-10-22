@@ -108,4 +108,4 @@ Cotea also contains interactive debugging mode. Using the cotea one can detects 
 - 'nt' - add New Task
 - 'w' - Watch ansible variable value
 
-A detailed overview of all interfaces is provided in [cotea documentation](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md). The full review of cotea debugging mode will be added to documentation soon.
+A detailed overview of all interfaces is provided in [cotea documentation](https://github.com/ispras/cotea/blob/main/docs/cotea_docs.md).

@@ -30,3 +30,13 @@ while r.has_next_play():
 r.finish_ansible()
 ```
 
+Currently supported commands of the interactive mode are the following:
+- 'ft' - print info about the Failed Task
+- 'msg' - print all ansible error MSGs (including the ignored ones)
+- 'p' - print Progress bar
+- 'h'/'help' - print help message
+- 're' - RErun of the failed task
+- 'v' - add new Variable as extra var
+- 'c' - Continue ansible execution (go to the next task)
+- 'nt' - add New Task
+- 'w' - Watch ansible variable value
