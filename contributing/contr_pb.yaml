@@ -1,0 +1,15 @@
+---
+- name: Play1
+  hosts: host1
+  tasks:
+  - name: Pinge-Ponge
+    ping:
+
+#  - name: Bad task (will fail)
+#    shell: "mv biba boba" 
+
+  - name: Creates very important directory
+    file:
+      path: /home/ubuntu/important_dir
+      state: directory
+
