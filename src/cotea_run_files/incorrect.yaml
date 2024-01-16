@@ -1,0 +1,6 @@
+---
+- name: Play1
+  hosts: all
+  tasks:
+  - name: Syntactically incorrect command
+    battle_star_engine:

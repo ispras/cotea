@@ -123,15 +123,12 @@ class runner:
             PlaybookExecutor.__init__ = self.playbook_executor_wrp.func
 
     def _except_hook(self, args, /):
-        exc_type, exc_value, exc_traceback, thread = \
-            args.exc_type, args.exc_value, args.exc_traceback, args.thread
-
-        if (exc_type == SystemExit or
+        if (args.exc_type == SystemExit or
                 # NOTE: this probably should never happen
-                thread != self.ansible_thread):
+                args.thread != self.ansible_thread):
             return self._old_except_hook(args)
 
-        self.sync_obj.exception = exc_value
+        self.sync_obj.exception = args.exc_value
         self.sync_obj.continue_runner()
 
     def _start_ansible(self):
@@ -318,10 +315,11 @@ class runner:
 
 
     def finish_ansible(self):
-        while self.sync_obj.curr_breakpoint_label != self.breakpoint_labeles["after_playbook"]:
-            self.sync_obj.continue_ansible_with_stop()
+        if self.sync_obj.exception is None:
+            while self.sync_obj.curr_breakpoint_label != self.breakpoint_labeles["after_playbook"]:
+                self.sync_obj.continue_ansible_with_stop()
+            self.sync_obj.continue_ansible()
 
-        self.sync_obj.continue_ansible()
         self.ansible_thread.join(timeout=5)
         self._set_wrappers_back()
 
