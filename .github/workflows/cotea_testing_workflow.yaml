@@ -31,3 +31,4 @@ jobs:
           cd ./src
           python cotea_ok_case.py
           python cotea_ansible_error_case.py
+          python cotea_internal_error_case.py

@@ -7,6 +7,8 @@ class ans_sync:
         self.ansible_event = threading.Event()
         self.logger = logger
         self.curr_breakpoint_label = None
+        # Used to pass exceptions from Ansible thread
+        self.exception = None
 
     def status(self):
         self.logger.debug("Runner event status: %s", self.runner_event.is_set())
@@ -17,6 +19,8 @@ class ans_sync:
         #self.logger.debug("runner: waiting...")
         self.runner_event.wait()
         self.runner_event.clear()
+        if self.exception is not None:
+            raise self.exception
 
     def ansible_just_wait(self):
         #self.logger.debug("ansible: waiting...")
@@ -36,6 +40,8 @@ class ans_sync:
         self.runner_event.wait()
         self.runner_event.clear()
         #self.logger.debug("runner: ANSIBLE WAKED ME UP")
+        if self.exception is not None:
+            raise self.exception
 
     def continue_runner(self):
         #self.logger.debug("ansible: resume runner work")
