@@ -1,4 +1,7 @@
+import os
 import unittest
+
+from test.utils import ANSIBLE_DIR, INVENTORY_PATH
 
 
 class TestCotea(unittest.TestCase):
@@ -14,8 +17,8 @@ class TestCotea(unittest.TestCase):
         from cotea.runner import runner
         from cotea.arguments_maker import argument_maker
 
-        pb_path = "cotea_run_files/#%|&"
-        inv_path = "cotea_run_files/inv"
+        pb_path = os.path.join(ANSIBLE_DIR, "#%|&")
+        inv_path = INVENTORY_PATH
 
         arg_maker = argument_maker()
         arg_maker.add_arg("-i", inv_path)
@@ -39,8 +42,8 @@ class TestCotea(unittest.TestCase):
         from cotea.runner import runner
         from cotea.arguments_maker import argument_maker
 
-        pb_path = "cotea_run_files/incorrect.yaml"
-        inv_path = "cotea_run_files/inv"
+        pb_path = os.path.join(ANSIBLE_DIR, "incorrect.yaml")
+        inv_path = INVENTORY_PATH
 
         arg_maker = argument_maker()
         arg_maker.add_arg("-i", inv_path)

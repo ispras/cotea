@@ -1,2 +1,0 @@
-[host1]           
-localhost ansible_connection=ssh ansible_ssh_port=2222 ansible_user=root ansible_password=amella ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

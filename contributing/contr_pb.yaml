@@ -6,7 +6,7 @@
     ping:
 
 #  - name: Bad task (will fail)
-#    shell: "mv biba boba" 
+#    shell: "mv biba boba"
 
   - name: Creates very important directory
     file:
