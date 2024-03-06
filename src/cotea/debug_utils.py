@@ -1,12 +1,13 @@
 from ansible.playbook.task import Task
 from cotea.runner import runner
+from cotea.utils import get_string_from_input
 
 
 def print_help_msg():
     help_msg = "Informative commands:\n"
     help_msg += "'ft' - print info about the Failed Task\n"
     help_msg += "'msg' - print all ansible error MSGs (including the ignored ones)\n"
-    help_msg += "'p' - print Progress bar\n"
+    #help_msg += "'p' - print Progress bar\n"
     help_msg += "'h'/'help' - print this msg\n"
     help_msg += "\nAction commands:\n"
     help_msg += "'re' - RErun of the failed task\n"
@@ -49,8 +50,9 @@ def interactive_discotech(failed_task: Task, r: runner):
     print("\nINTERACTIVE MODE")
     
     while True:
-        print("Enter command: ", end="")
-        command = input()
+        command = get_string_from_input("Enter command: ")
+        command = command.strip(" ")
+
         if command == "ft":
             pretty_print_task(failed_task)
 
@@ -68,15 +70,17 @@ def interactive_discotech(failed_task: Task, r: runner):
             msg_number = 1
             
             for msg in err_msgs:
-                print("MSG number {}:\n{}\n".format(msg_number, msg))
+                print(f"MSG number {msg_number}:\n{msg}\n")
                 msg_number += 1
 
         elif command == "v":
             print("var will be added as extra var")
-            print("Enter var name: ", end="")
-            var_name = input()
-            print("Enter var value: ", end="")
-            var_value = input()
+
+            var_name = get_string_from_input("Enter var name: ")
+            var_name = var_name.strip(" ")
+
+            var_value = get_string_from_input("Enter var value: ")
+            var_value = var_value.strip(" ")
                                 
             r.add_var_as_extra_var(var_name, var_value)
             print("var added successfully!\n")
@@ -84,15 +88,14 @@ def interactive_discotech(failed_task: Task, r: runner):
         elif command == "c":
             break
 
-        elif command == "p":
-            print()
-            play_name = r.get_cur_play_name()
-            next_task = r.get_next_task_name()
-            r.progress_bar.print_bar(play_name, next_task)
+        # elif command == "p":
+        #     print()
+        #     play_name = r.get_cur_play_name()
+        #     next_task = r.get_next_task_name()
+        #     r.progress_bar.print_bar(play_name, next_task)
         
         elif command == "nt":
-            print("Enter new task like a string entering all \\n and spaces needed:")
-            new_task_str = input()
+            new_task_str = get_string_from_input("Enter new task like a string entering all \\n and spaces needed:\n")
 
             # TODO: not sure that this is a good solution
             #       however, this is interactive mode and
@@ -101,18 +104,18 @@ def interactive_discotech(failed_task: Task, r: runner):
             add_ok, err_msg = r.add_new_task(new_task_str)
 
             if not add_ok:
-                print("\nThe adding process was failed with the error:\n", err_msg)
+                print(f"\nThe adding process was failed with the error:\n{err_msg}")
             else:
                 print("\nNew task was added! It will run on every host of current inventory.")
                 print("Press 'c' after this, not 're'. This will run new task and the failed one after it.\n")
                 r.progress_bar.add_to_total_task_count(1)
         
         elif command == "w":
-            print("Enter var name: ", end="")
-            
-            var_name = input()
+            var_name = get_string_from_input("Enter var name: ")
+            var_name = var_name.strip(" ")
+
             value = r.get_variable(var_name)
-            msg = "{} var value:\n{}".format(var_name, value)
+            msg = f"{var_name} var value:\n{value}"
             
             print(msg)
 
