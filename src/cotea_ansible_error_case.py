@@ -1,3 +1,4 @@
+import shutil
 import unittest
 
 from cotea.runner import runner
@@ -10,7 +11,9 @@ def run_ansible_error_case(pb_path, inv_path):
     arg_maker = argument_maker()
     arg_maker.add_arg("-i", inv_path)
 
-    r = runner(pb_path, arg_maker, show_progress_bar=True)
+    bin_path = shutil.which('ansible-playbook')
+
+    r = runner(pb_path, arg_maker, show_progress_bar=True, ansible_pb_bin=bin_path)
 
     while r.has_next_play():
         while r.has_next_task():
@@ -30,7 +33,9 @@ def run_ansible_error_case_with_ignore(pb_path, inv_path):
     arg_maker = argument_maker()
     arg_maker.add_arg("-i", inv_path)
 
-    r = runner(pb_path, arg_maker, show_progress_bar=True)
+    bin_path = shutil.which('ansible-playbook')
+
+    r = runner(pb_path, arg_maker, show_progress_bar=True, ansible_pb_bin=bin_path)
 
     while r.has_next_play():
         while r.has_next_task():
