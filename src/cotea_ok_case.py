@@ -1,3 +1,4 @@
+import shutil
 import unittest
 
 from cotea.runner import runner
@@ -24,7 +25,9 @@ def run_cotea_ok_case(pb_path, inv_path):
     arg_maker = argument_maker()
     arg_maker.add_arg("-i", inv_path)
 
-    r = runner(pb_path, arg_maker, show_progress_bar=True)
+    bin_path = shutil.which('ansible-playbook')
+
+    r = runner(pb_path, arg_maker, show_progress_bar=True, ansible_pb_bin=bin_path)
     plays_ind = 0
     tasks_ind = 0
 

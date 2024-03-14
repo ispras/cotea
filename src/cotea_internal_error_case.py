@@ -1,3 +1,4 @@
+import shutil
 import unittest
 
 
@@ -10,6 +11,25 @@ class TestCotea(unittest.TestCase):
         #   to clear previous execution context
         remove_modules_from_imported(module_name_like="cotea")
 
+    def test_incorrect_playbook_bin_path(self):
+        from cotea.runner import runner
+        from cotea.arguments_maker import argument_maker
+
+        pb_path = "cotea_run_files/ok.yaml"
+        inv_path = "cotea_run_files/inv"
+        ansible_pb_bin = "/path/to/.venv/bin/ansible-playbook"
+
+        arg_maker = argument_maker()
+        arg_maker.add_arg("-i", inv_path)
+
+        try:
+            runner(pb_path, arg_maker, show_progress_bar=True, ansible_pb_bin=ansible_pb_bin)
+        except Exception as e:
+            self.assertTrue(str(e) == f"Ansible playbook bin {ansible_pb_bin} not found",
+                            msg="Unexpected exception message")
+        else:
+            self.assertFalse(True, msg="Ansible is supposed to fail due to incorrect ansible playbook bin path")
+
     def test_incorrect_playbook_path_case(self):
         from cotea.runner import runner
         from cotea.arguments_maker import argument_maker
@@ -17,9 +37,11 @@ class TestCotea(unittest.TestCase):
         pb_path = "cotea_run_files/#%|&"
         inv_path = "cotea_run_files/inv"
 
+        bin_path = shutil.which('ansible-playbook')
+
         arg_maker = argument_maker()
         arg_maker.add_arg("-i", inv_path)
-        r = runner(pb_path, arg_maker, show_progress_bar=True)
+        r = runner(pb_path, arg_maker, show_progress_bar=True, ansible_pb_bin=bin_path)
 
         try:
             while r.has_next_play():
@@ -41,10 +63,11 @@ class TestCotea(unittest.TestCase):
 
         pb_path = "cotea_run_files/incorrect.yaml"
         inv_path = "cotea_run_files/inv"
+        bin_path = shutil.which('ansible-playbook')
 
         arg_maker = argument_maker()
         arg_maker.add_arg("-i", inv_path)
-        r = runner(pb_path, arg_maker, show_progress_bar=True)
+        r = runner(pb_path, arg_maker, show_progress_bar=True, ansible_pb_bin=bin_path)
 
         try:
             while r.has_next_play():

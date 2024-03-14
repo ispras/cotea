@@ -66,7 +66,7 @@ class runner:
         self.progress_bar = ansible_progress_bar()
         self.execution_tree = AnsibleExecTree()
 
-        if os.path.exists(ansible_pb_bin):
+        if os.path.isfile(ansible_pb_bin):
             self.ansible_pb_bin = ansible_pb_bin
         else:
             raise Exception(f"Ansible playbook bin {ansible_pb_bin} not found")
