@@ -1,7 +1,8 @@
-import json
 import os
+import json
 import threading
 
+import cotea.consts as consts
 import cotea.utils as cotea_utils
 
 # during the imports ansible global objects are created
@@ -31,6 +32,7 @@ from cotea.wrappers.playbook_executor_wrapper import play_executor_wrapper
 from cotea.wrappers.iterator_add_task_wrapper import iterator_add_task_wrapper
 from cotea.progress_bar import ansible_progress_bar
 from cotea.ansible_execution_tree import AnsibleExecTree
+from cotea.cotea_config import cotea_config
 
 import logging
 
@@ -49,6 +51,16 @@ class runner:
 
         self.pb_path = pb_path
         self.arg_maker = arg_maker
+        
+        # cotea config init and fetch
+        self.cotea_conf = cotea_config()
+
+        config_file_dir = os.path.expanduser(consts.COTEA_CONFIG_DIR)
+        config_file_name = consts.COTEA_CONFIG_FILE_NAME
+        config_file_path = os.path.join(config_file_dir, config_file_name)
+
+        self.cotea_conf.load_from_file(config_file_path)
+        self.continue_on_fail = self.cotea_conf.get_conf_param("continue_on_fail")
 
         self.logger = logging.getLogger("RUNNER")
 

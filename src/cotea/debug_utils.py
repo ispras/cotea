@@ -48,6 +48,9 @@ def pretty_print_task(task: Task):
 
 def interactive_discotech(failed_task: Task, r: runner):
     print("\nINTERACTIVE MODE")
+
+    if r.continue_on_fail:
+        return
     
     while True:
         command = get_string_from_input("Enter command: ")

@@ -4,3 +4,4 @@ dist/
 build/
 venv/
 .venv/
+src/cotea_dev_run.py
