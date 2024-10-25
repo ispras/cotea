@@ -161,6 +161,9 @@ class get_next_task_wrapper(wrapper_base):
             for host in hosts_left:
                 self.play_iterator.add_tasks(host, new_tasks)
 
+            if hasattr(self.play_iterator, "all_tasks"):
+                self.play_iterator.all_tasks.extend(new_tasks)
+
             return True, ""
         
         error_msg = "Some of the needed objects are None. Most likely "
