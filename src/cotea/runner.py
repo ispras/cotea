@@ -38,8 +38,7 @@ import logging
 
 
 class runner:
-    def __init__(self, pb_path, arg_maker, debug_mod=None, show_progress_bar=False,
-                 ansible_pb_bin="/usr/local/bin/ansible-playbook"):
+    def __init__(self, pb_path, arg_maker, debug_mod=None, show_progress_bar=False):
         logging_lvl = logging.INFO
         if debug_mod:
             logging_lvl= logging.DEBUG
@@ -77,11 +76,6 @@ class runner:
 
         self.progress_bar = ansible_progress_bar()
         self.execution_tree = AnsibleExecTree()
-
-        if os.path.isfile(ansible_pb_bin):
-            self.ansible_pb_bin = ansible_pb_bin
-        else:
-            raise Exception(f"Ansible playbook bin {ansible_pb_bin} not found")
 
         self._set_wrappers()
         start_ok = self._start_ansible()
@@ -152,7 +146,11 @@ class runner:
 
     def _start_ansible(self):
         args = self.arg_maker.args
-        args.insert(0, self.ansible_pb_bin)
+
+        # this arg doesn't affect to something
+        # ansible will run everything, no matter either arg is None or any random string
+        args.insert(0, "/usr/local/bin/ansible-playbook")
+
         args.insert(1, self.pb_path)
 
         self.pbCLI = PlaybookCLI(args)

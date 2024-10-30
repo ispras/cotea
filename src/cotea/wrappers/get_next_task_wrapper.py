@@ -1,4 +1,6 @@
 from ansible.inventory.host import Host
+from ansible.playbook.task import Task as AnsibleTaskClass
+from ansible.playbook.block import Block as AnsibleBlockClass
 
 from cotea.wrappers.wrapper_base import wrapper_base
 from cotea.wrappers.ansi_breakpoint import ansi_breakpoint
@@ -162,7 +164,13 @@ class get_next_task_wrapper(wrapper_base):
                 self.play_iterator.add_tasks(host, new_tasks)
 
             if hasattr(self.play_iterator, "all_tasks"):
-                self.play_iterator.all_tasks.extend(new_tasks)
+                for task_or_block in new_tasks:
+                    if isinstance(task_or_block, AnsibleTaskClass):
+                        self.play_iterator.all_tasks.append(task_or_block)
+                    elif isinstance(task_or_block, AnsibleBlockClass):
+                        if task_or_block.has_tasks():
+                            self.play_iterator._blocks.append(task_or_block)
+                            self.play_iterator.all_tasks.extend(task_or_block.get_tasks())
 
             return True, ""
         
